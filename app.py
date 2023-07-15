@@ -2,24 +2,25 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image
 import numpy as np
+import pandas as pd
 
 
 # Define class labels
 class_names = [
-    "Corn___Common_Rust",
-    "Corn___Gray_Leaf_Spot",
-    "Corn___Healthy",
-    "Corn___Northern_Leaf_Blight",
-    "Potato___Early_Blight",
-    "Potato___Healthy",
-    "Potato___Late_Blight",
-    "Rice___Brown_Spot",
-    "Rice___Healthy",
-    "Rice___Leaf_Blast",
-    "Rice___Neck_Blast",
-    "Wheat___Brown_Rust",
-    "Wheat___Healthy",
-    "Wheat___Yellow_Rust"
+    "Corn Common Rust",
+    "Corn Gray Leaf Spot",
+    "Corn Healthy",
+    "Corn Northern Leaf Blight",
+    "Potato Early Blight",
+    "Potato Healthy",
+    "Potato Late Blight",
+    "Rice Brown Spot",
+    "Rice Healthy",
+    "Rice Leaf Blast",
+    "Rice Neck Blast",
+    "Wheat Brown Rust",
+    "Wheat Healthy",
+    "Wheat Yellow Rust"
 ]
 
 # Define the function for image classification
@@ -43,6 +44,10 @@ def classify_image(image):
     top_classes = [class_names[i] for i in top_indices]
     top_confidences = [predictions[0][i] * 100 for i in top_indices]
     
+    # Filter out predictions with 0% confidence
+    valid_predictions = [(cls, conf) for cls, conf in zip(top_classes, top_confidences) if conf > 0]
+    top_classes, top_confidences = zip(*valid_predictions)
+    
     return top_classes, top_confidences
 
 # Set page title
@@ -60,7 +65,19 @@ if submit_button and uploaded_file is not None:
     # Classify the image
     top_classes, top_confidences = classify_image(image)
     
-    # Display the top 3 results
-    st.write("Top 3 Predictions:")
-    for i in range(len(top_classes)):
-        st.write(f"{i+1}. Class: {top_classes[i]}, Confidence: {top_confidences[i]:.2f}%")
+    # Prepare the result in DataFrame format
+    valid_predictions_df = pd.DataFrame({
+        "Class": top_classes,
+        "Confidence (%)": top_confidences
+    })
+    
+    # Filter out classes with 0% confidence
+    valid_predictions_df = valid_predictions_df[valid_predictions_df["Confidence (%)"] > 0]
+    
+    # Display the top predictions with index starting from 1
+    if not valid_predictions_df.empty:
+        valid_predictions_df.index = range(1, len(valid_predictions_df) + 1)
+        st.write("Top Predictions:")
+        st.dataframe(valid_predictions_df)
+    else:
+        st.write("No valid predictions with confidence greater than 0%.")
