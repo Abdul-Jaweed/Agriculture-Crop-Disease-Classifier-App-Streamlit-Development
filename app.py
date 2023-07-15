@@ -2,13 +2,9 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import os
 
 
-
-
-
-# Define class names
+# Define class labels
 class_names = [
     "Corn___Common_Rust",
     "Corn___Gray_Leaf_Spot",
@@ -36,24 +32,11 @@ def classify_image(image):
     # Reshape the image to match the model's input shape
     image = np.reshape(image, (1, 224, 224, 3))
     
-    # Load the quantized TensorFlow Lite model
-    interpreter = tf.lite.Interpreter(model_path='model_quantized.tflite')
-    interpreter.allocate_tensors()
+    # Load the model
+    model = tf.keras.models.load_model('model.h5')
     
-    # Get the input and output details of the model
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    
-    # Set the input tensor
-    input_index = input_details[0]['index']
-    interpreter.set_tensor(input_index, image.astype(np.float32))
-    
-    # Run the inference
-    interpreter.invoke()
-    
-    # Get the output tensor
-    output_index = output_details[0]['index']
-    predictions = interpreter.get_tensor(output_index)
+    # Perform prediction
+    predictions = model.predict(image)
     
     # Get the predicted class and confidence
     class_index = np.argmax(predictions)
@@ -65,10 +48,11 @@ def classify_image(image):
 # Set page title
 st.title(":red[Agricultural Crop Disease Classification]")
 
-# Create the file uploader
+# Create the file uploader and submit button
 uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+submit_button = st.button("Predict")
 
-if uploaded_file is not None:
+if submit_button and uploaded_file is not None:
     # Display the uploaded image
     image = Image.open(uploaded_file)
     st.image(image, caption='Uploaded Image')
