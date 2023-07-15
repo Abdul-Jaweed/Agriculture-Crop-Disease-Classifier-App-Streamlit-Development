@@ -38,12 +38,12 @@ def classify_image(image):
     # Perform prediction
     predictions = model.predict(image)
     
-    # Get the predicted class and confidence
-    class_index = np.argmax(predictions)
-    class_name = class_names[class_index]
-    confidence = predictions[0][class_index] * 100
+    # Get the top 3 predicted classes and their confidences
+    top_indices = np.argsort(predictions[0])[::-1][:3]  # Get the indices of top 3 classes
+    top_classes = [class_names[i] for i in top_indices]
+    top_confidences = [predictions[0][i] * 100 for i in top_indices]
     
-    return class_name, confidence
+    return top_classes, top_confidences
 
 # Set page title
 st.title(":red[Agricultural Crop Disease Classification]")
@@ -58,8 +58,9 @@ if submit_button and uploaded_file is not None:
     st.image(image, caption='Uploaded Image')
     
     # Classify the image
-    class_name, confidence = classify_image(image)
+    top_classes, top_confidences = classify_image(image)
     
-    # Display the result
-    st.write(f"Class: {class_name}")
-    st.write(f"Confidence: {confidence:.2f}%")
+    # Display the top 3 results
+    st.write("Top 3 Predictions:")
+    for i in range(len(top_classes)):
+        st.write(f"{i+1}. Class: {top_classes[i]}, Confidence: {top_confidences[i]:.2f}%")
